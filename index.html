@@ -10,6 +10,11 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Date Range Picker -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -96,6 +101,31 @@
         .shimmer {
             animation: shimmer 1.5s infinite;
         }
+        
+        /* Heatmap styles */
+        .heatmap-cell {
+            transition: all 0.2s ease;
+        }
+        
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+        
+        /* Sankey diagram styles */
+        .sankey-link {
+            fill: none;
+            stroke-opacity: 0.5;
+        }
+        
+        .sankey-link:hover {
+            stroke-opacity: 0.8;
+        }
+        
+        /* Forecast confidence interval */
+        .forecast-band {
+            fill-opacity: 0.2;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
@@ -130,6 +160,16 @@
             <button data-view="sectors" class="view-btn w-full flex items-center px-4 py-3 rounded-xl text-left text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200 group">
                 <i data-lucide="target" class="w-5 h-5 text-blue-500 group-hover:scale-110 transition-transform"></i>
                 <span class="ml-3 font-medium">Sectors</span>
+            </button>
+            
+            <button data-view="insights" class="view-btn w-full flex items-center px-4 py-3 rounded-xl text-left text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200 group">
+                <i data-lucide="lightbulb" class="w-5 h-5 text-blue-500 group-hover:scale-110 transition-transform"></i>
+                <span class="ml-3 font-medium">AI Insights</span>
+            </button>
+            
+            <button data-view="forecast" class="view-btn w-full flex items-center px-4 py-3 rounded-xl text-left text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200 group">
+                <i data-lucide="trending-up" class="w-5 h-5 text-blue-500 group-hover:scale-110 transition-transform"></i>
+                <span class="ml-3 font-medium">Forecast</span>
             </button>
         </nav>
 
@@ -255,7 +295,7 @@
                     </button>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div class="space-y-2">
                         <label class="text-sm font-medium text-gray-700">Time Period</label>
                         <select id="month-filter" class="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm font-medium appearance-none cursor-pointer">
@@ -281,6 +321,11 @@
                             <option value="NYAGATARE">NYAGATARE</option>
                             <option value="JALI & GATSATA">JALI & GATSATA</option>
                         </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-gray-700">Date Range</label>
+                        <input type="text" id="date-range" class="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm font-medium cursor-pointer" readonly>
                     </div>
 
                     <div class="space-y-2">
@@ -563,6 +608,229 @@
                     </div>
                 </div>
             </section>
+
+            <!-- AI Insights Section (Hidden by default) -->
+            <section id="insights-section" class="space-y-8 hidden">
+                <!-- Anomaly Detection -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Anomaly Detection</h3>
+                            <p class="text-sm text-gray-500">AI-powered detection of unusual patterns</p>
+                        </div>
+                        <span class="px-3 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">3 Detected</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="p-4 bg-red-50 rounded-lg border border-red-200">
+                            <div class="flex items-center mb-2">
+                                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600 mr-2"></i>
+                                <h4 class="font-semibold text-red-800">Revenue Drop</h4>
+                            </div>
+                            <p class="text-sm text-red-700">KIMIRONKO sector shows 42% drop compared to historical pattern</p>
+                            <p class="text-xs text-red-600 mt-2">Detected: 2 days ago</p>
+                        </div>
+                        
+                        <div class="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <div class="flex items-center mb-2">
+                                <i data-lucide="alert-circle" class="w-5 h-5 text-yellow-600 mr-2"></i>
+                                <h4 class="font-semibold text-yellow-800">Target Deviation</h4>
+                            </div>
+                            <p class="text-sm text-yellow-700">NYARUGUNGA consistently underperforming by 25-30% weekly</p>
+                            <p class="text-xs text-yellow-600 mt-2">Detected: 1 week ago</p>
+                        </div>
+                        
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex items-center mb-2">
+                                <i data-lucide="trending-up" class="w-5 h-5 text-blue-600 mr-2"></i>
+                                <h4 class="font-semibold text-blue-800">Exceptional Growth</h4>
+                            </div>
+                            <p class="text-sm text-blue-700">KANOMBE shows 35% higher growth than predicted pattern</p>
+                            <p class="text-xs text-blue-600 mt-2">Detected: 3 days ago</p>
+                        </div>
+                    </div>
+                    
+                    <div class="h-80">
+                        <canvas id="anomalyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Predictive Insights -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Predictive Insights</h3>
+                            <p class="text-sm text-gray-500">AI-generated predictions and recommendations</p>
+                        </div>
+                        <span class="px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">5 Insights</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl">
+                            <div class="flex items-center mb-3">
+                                <div class="p-2 bg-blue-100 rounded-lg mr-3">
+                                    <i data-lucide="trending-up" class="w-5 h-5 text-blue-600"></i>
+                                </div>
+                                <h4 class="font-semibold text-gray-900">Growth Opportunity</h4>
+                            </div>
+                            <p class="text-sm text-gray-700 mb-3">Expanding operations in KANOMBE could yield 18-22% additional revenue based on pattern analysis.</p>
+                            <div class="flex items-center text-xs text-blue-600">
+                                <i data-lucide="clock" class="w-3 h-3 mr-1"></i>
+                                <span>Estimated impact: $2.4M</span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-gradient-to-br from-green-50 to-teal-50 rounded-xl">
+                            <div class="flex items-center mb-3">
+                                <div class="p-2 bg-green-100 rounded-lg mr-3">
+                                    <i data-lucide="shield" class="w-5 h-5 text-green-600"></i>
+                                </div>
+                                <h4 class="font-semibold text-gray-900">Risk Mitigation</h4>
+                            </div>
+                            <p class="text-sm text-gray-700 mb-3">NYARUGUNGA shows signs of continued underperformance. Recommend resource reallocation.</p>
+                            <div class="flex items-center text-xs text-green-600">
+                                <i data-lucide="alert-triangle" class="w-3 h-3 mr-1"></i>
+                                <span>Risk score: 78/100</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="h-80">
+                        <canvas id="predictiveChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Correlation Analysis -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Correlation Analysis</h3>
+                            <p class="text-sm text-gray-500">Relationships between different performance factors</p>
+                        </div>
+                    </div>
+                    
+                    <div class="h-96">
+                        <canvas id="correlationChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Forecast Section (Hidden by default) -->
+            <section id="forecast-section" class="space-y-8 hidden">
+                <!-- Revenue Forecast -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Revenue Forecast</h3>
+                            <p class="text-sm text-gray-500">Projected performance for next 6 months</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">87% Accuracy</span>
+                            <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="h-96">
+                        <canvas id="forecastChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Scenario Planning -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Scenario Planning</h3>
+                            <p class="text-sm text-gray-500">Compare different strategic approaches</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
+                            <h4 class="font-semibold text-blue-800 mb-2">Current Plan</h4>
+                            <p class="text-2xl font-bold text-blue-700">$72.4M</p>
+                            <p class="text-xs text-blue-600">Projected annual revenue</p>
+                        </div>
+                        
+                        <div class="p-4 bg-green-50 rounded-xl border border-green-200">
+                            <h4 class="font-semibold text-green-800 mb-2">Optimistic</h4>
+                            <p class="text-2xl font-bold text-green-700">$86.2M</p>
+                            <p class="text-xs text-green-600">+19% with expansion</p>
+                        </div>
+                        
+                        <div class="p-4 bg-orange-50 rounded-xl border border-orange-200">
+                            <h4 class="font-semibold text-orange-800 mb-2">Conservative</h4>
+                            <p class="text-2xl font-bold text-orange-700">$68.1M</h4>
+                            <p class="text-xs text-orange-600">-6% with constraints</p>
+                        </div>
+                    </div>
+                    
+                    <div class="h-80">
+                        <canvas id="scenarioChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Forecast Accuracy -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Forecast Accuracy</h3>
+                            <p class="text-sm text-gray-500">Model performance and confidence intervals</p>
+                        </div>
+                        <span class="px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">92% Historical Accuracy</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <h4 class="font-semibold text-gray-800 mb-3">Model Confidence by Sector</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                        <span>KANOMBE</span>
+                                        <span>94%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 94%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                        <span>RUSORORO</span>
+                                        <span>88%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 88%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                        <span>BUSANZA</span>
+                                        <span>91%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 91%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                        <span>NYARUGUNGA</span>
+                                        <span>72%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-yellow-500 h-2 rounded-full" style="width: 72%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-800 mb-3">Accuracy Trends</h4>
+                            <div class="h-64">
+                                <canvas id="accuracyChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
         
         <!-- Footer -->
@@ -654,6 +922,16 @@
 
         const dailyTrends = generateDailyTrends();
         
+        // Forecast data
+        const forecastData = [
+            { month: 'May', forecast: 22500000, low: 19500000, high: 25500000 },
+            { month: 'June', forecast: 23800000, low: 20800000, high: 26800000 },
+            { month: 'July', forecast: 25200000, low: 22200000, high: 28200000 },
+            { month: 'August', forecast: 26500000, low: 23500000, high: 29500000 },
+            { month: 'September', forecast: 27800000, low: 24800000, high: 30800000 },
+            { month: 'October', forecast: 29100000, low: 26100000, high: 32100000 }
+        ];
+        
         // State
         let state = {
             selectedView: 'overview',
@@ -662,7 +940,11 @@
             isLoading: false,
             searchTerm: '',
             sidebarCollapsed: false,
-            showNotifications: false
+            showNotifications: false,
+            dateRange: {
+                start: new Date('2025-01-01'),
+                end: new Date('2025-04-30')
+            }
         };
 
         // DOM Elements
@@ -676,17 +958,47 @@
         const searchInput = document.getElementById('search-input');
         const monthFilter = document.getElementById('month-filter');
         const sectorFilter = document.getElementById('sector-filter');
+        const dateRangeInput = document.getElementById('date-range');
         const clearFiltersBtn = document.getElementById('clear-filters');
         const viewButtons = document.querySelectorAll('.view-btn');
         const pageTitle = document.getElementById('page-title');
         const overviewSection = document.getElementById('overview-section');
         const trendsSection = document.getElementById('trends-section');
         const sectorsSection = document.getElementById('sectors-section');
+        const insightsSection = document.getElementById('insights-section');
+        const forecastSection = document.getElementById('forecast-section');
         const sectorFilterAlert = document.getElementById('sector-filter-alert');
         const selectedSectorName = document.getElementById('selected-sector-name');
         const clearSectorFilter = document.getElementById('clear-sector-filter');
         const topPerformersBtn = document.getElementById('top-performers');
         const underperformersBtn = document.getElementById('underperformers');
+
+        // Initialize the dashboard when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initDashboard();
+            initDateRangePicker();
+        });
+
+        function initDateRangePicker() {
+            $(dateRangeInput).daterangepicker({
+                startDate: state.dateRange.start,
+                endDate: state.dateRange.end,
+                ranges: {
+                   'Today': [moment(), moment()],
+                   'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                   'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                   'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                   'This Month': [moment().startOf('month'), moment().endOf('month')],
+                   'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                   'Year to Date': [moment().startOf('year'), moment()],
+                   'Full Year 2025': [moment('2025-01-01'), moment('2025-12-31')]
+                }
+            }, function(start, end) {
+                state.dateRange.start = start.toDate();
+                state.dateRange.end = end.toDate();
+                applyFilters();
+            });
+        }
 
         // Initialize the dashboard
         function initDashboard() {
@@ -826,7 +1138,7 @@
                     plugins: {
                         legend: {
                             position: 'top',
-                        },
+                            },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -873,7 +1185,7 @@
                     plugins: {
                         legend: {
                             position: 'top',
-                        },
+                            },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -983,6 +1295,151 @@
                             ticks: {
                                 callback: function(value) {
                                     return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Anomaly Chart
+            const anomalyCtx = document.getElementById('anomalyChart').getContext('2d');
+            new Chart(anomalyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6', 'Week 7', 'Week 8', 'Week 9', 'Week 10', 'Week 11', 'Week 12', 'Week 13', 'Week 14', 'Week 15', 'Week 16'],
+                    datasets: [
+                        {
+                            label: 'Expected',
+                            data: [120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195],
+                            borderColor: '#6366f1',
+                            borderDash: [5, 5],
+                            tension: 0.4,
+                            pointStyle: false
+                        },
+                        {
+                            label: 'Actual',
+                            data: [118, 124, 132, 130, 145, 142, 155, 150, 165, 160, 168, 170, 185, 180, 175, 200],
+                            borderColor: '#10b981',
+                            tension: 0.4,
+                            fill: false
+                        },
+                        {
+                            label: 'Anomalies',
+                            data: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, 175, 200],
+                            borderColor: '#ef4444',
+                            tension: 0.4,
+                            pointBackgroundColor: '#ef4444',
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + (context.raw ? context.raw + 'K' : 'N/A');
+                                }
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                box1: {
+                                    type: 'box',
+                                    xMin: 13.5,
+                                    xMax: 15.5,
+                                    yMin: 0,
+                                    yMax: 200,
+                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                    borderColor: 'rgba(239, 68, 68, 0.5)',
+                                    borderWidth: 1
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Revenue (K RWF)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Forecast Chart
+            const forecastCtx = document.getElementById('forecastChart').getContext('2d');
+            new Chart(forecastCtx, {
+                type: 'line',
+                data: {
+                    labels: [...monthlyData.map(m => m.month), ...forecastData.map(f => f.month)],
+                    datasets: [
+                        {
+                            label: 'Actual Revenue',
+                            data: [...monthlyData.map(m => m.revenue), ...Array(6).fill(null)],
+                            borderColor: '#6366f1',
+                            tension: 0.2,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Forecast',
+                            data: [...Array(4).fill(null), ...forecastData.map(f => f.forecast)],
+                            borderColor: '#8b5cf6',
+                            borderDash: [5, 5],
+                            tension: 0.2,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Upper Bound',
+                            data: [...Array(4).fill(null), ...forecastData.map(f => f.high)],
+                            borderColor: '#10b981',
+                            borderWidth: 0,
+                            tension: 0.2,
+                            fill: '+1',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            pointStyle: false
+                        },
+                        {
+                            label: 'Lower Bound',
+                            data: [...Array(4).fill(null), ...forecastData.map(f => f.low)],
+                            borderColor: '#10b981',
+                            borderWidth: 0,
+                            tension: 0.2,
+                            fill: false,
+                            pointStyle: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + (context.raw ? (context.raw / 1000000).toFixed(1) + 'M RWF' : 'N/A');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(0) + 'M';
                                 }
                             }
                         }
@@ -1258,11 +1715,15 @@
                 overviewSection.classList.remove('hidden');
                 trendsSection.classList.add('hidden');
                 sectorsSection.classList.add('hidden');
+                insightsSection.classList.add('hidden');
+                forecastSection.classList.add('hidden');
             } else if (view === 'trends') {
                 pageTitle.textContent = 'Trend Analysis';
                 overviewSection.classList.add('hidden');
                 trendsSection.classList.remove('hidden');
                 sectorsSection.classList.add('hidden');
+                insightsSection.classList.add('hidden');
+                forecastSection.classList.add('hidden');
                 
                 // Update trend period label
                 const trendPeriodLabel = document.getElementById('trend-period-label');
@@ -1276,6 +1737,22 @@
                 overviewSection.classList.add('hidden');
                 trendsSection.classList.add('hidden');
                 sectorsSection.classList.remove('hidden');
+                insightsSection.classList.add('hidden');
+                forecastSection.classList.add('hidden');
+            } else if (view === 'insights') {
+                pageTitle.textContent = 'AI Insights';
+                overviewSection.classList.add('hidden');
+                trendsSection.classList.add('hidden');
+                sectorsSection.classList.add('hidden');
+                insightsSection.classList.remove('hidden');
+                forecastSection.classList.add('hidden');
+            } else if (view === 'forecast') {
+                pageTitle.textContent = 'Revenue Forecast';
+                overviewSection.classList.add('hidden');
+                trendsSection.classList.add('hidden');
+                sectorsSection.classList.add('hidden');
+                insightsSection.classList.add('hidden');
+                forecastSection.classList.remove('hidden');
             }
         }
 
@@ -1329,9 +1806,6 @@
             document.querySelectorAll('.progress-bar')[2].style.width = `${(filteredSectors.length / 17) * 100}%`;
             document.querySelectorAll('.progress-bar')[3].style.width = `${(filteredProfit / 24000000) * 100}%`;
         }
-
-        // Initialize the dashboard when the page loads
-        document.addEventListener('DOMContentLoaded', initDashboard);
     </script>
 </body>
 </html>
