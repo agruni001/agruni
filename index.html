@@ -86,11 +86,21 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+        
+        /* Animation for the shimmer effect */
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .shimmer {
+            animation: shimmer 1.5s infinite;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
     <!-- Sidebar -->
-    <aside class="sidebar fixed left-0 top-0 h-full bg-white shadow-xl z-50 w-72 border-r border-gray-200">
+    <aside id="sidebar" class="sidebar fixed left-0 top-0 h-full bg-white shadow-xl z-50 w-72 border-r border-gray-200">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div>
@@ -99,25 +109,25 @@
                     </h1>
                     <p class="text-sm text-gray-500">Analytics Dashboard</p>
                 </div>
-                <button class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i data-lucide="chevron-down" class="w-5 h-5 transform rotate-90"></i>
+                <button id="sidebar-toggle" class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i data-lucide="chevron-down" class="w-5 h-5 transform -rotate-90"></i>
                 </button>
             </div>
         </div>
 
         <nav class="p-4 space-y-2">
-            <button class="w-full flex items-center px-4 py-3 rounded-xl text-left bg-gradient-to-r from-primary to-secondary text-white shadow-lg transform scale-105">
+            <button data-view="overview" class="view-btn w-full flex items-center px-4 py-3 rounded-xl text-left bg-gradient-to-r from-primary to-secondary text-white shadow-lg transform scale-105">
                 <i data-lucide="bar-chart-3" class="w-5 h-5 text-white"></i>
                 <span class="ml-3 font-medium">Overview</span>
                 <div class="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>
             </button>
             
-            <button class="w-full flex items-center px-4 py-3 rounded-xl text-left text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200 group">
+            <button data-view="trends" class="view-btn w-full flex items-center px-4 py-3 rounded-xl text-left text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200 group">
                 <i data-lucide="trending-up" class="w-5 h-5 text-blue-500 group-hover:scale-110 transition-transform"></i>
                 <span class="ml-3 font-medium">Trends</span>
             </button>
             
-            <button class="w-full flex items-center px-4 py-3 rounded-xl text-left text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200 group">
+            <button data-view="sectors" class="view-btn w-full flex items-center px-4 py-3 rounded-xl text-left text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all duration-200 group">
                 <i data-lucide="target" class="w-5 h-5 text-blue-500 group-hover:scale-110 transition-transform"></i>
                 <span class="ml-3 font-medium">Sectors</span>
             </button>
@@ -143,13 +153,14 @@
     </aside>
 
     <!-- Top Bar -->
-    <div class="fixed top-0 right-0 bg-white shadow-lg z-40 left-72 border-b border-gray-200">
+    <div id="topbar" class="fixed top-0 right-0 bg-white shadow-lg z-40 left-72 border-b border-gray-200 transition-all duration-300">
         <div class="flex items-center justify-between px-6 py-4">
             <div class="flex items-center space-x-4 flex-1 max-w-md">
                 <div class="relative w-full">
                     <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"></i>
                     <input
                         type="text"
+                        id="search-input"
                         placeholder="Search sectors..."
                         class="w-full pl-10 pr-4 py-2 bg-gray-100 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all duration-200 text-sm"
                     />
@@ -157,17 +168,52 @@
             </div>
 
             <div class="flex items-center space-x-3">
-                <button class="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
+                <button id="refresh-btn" class="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                 </button>
 
                 <div class="relative">
-                    <button class="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors relative">
+                    <button id="notifications-btn" class="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors relative">
                         <i data-lucide="bell" class="w-4 h-4"></i>
                         <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                             <span class="text-xs text-white font-bold">3</span>
                         </div>
                     </button>
+                    
+                    <div id="notifications-panel" class="hidden absolute right-0 top-12 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50">
+                        <div class="p-4 border-b border-gray-200">
+                            <h3 class="font-semibold text-gray-900">Notifications</h3>
+                        </div>
+                        <div class="max-h-64 overflow-y-auto custom-scrollbar">
+                            <div class="p-4 border-b border-gray-100 hover:bg-gray-50">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 rounded-full mt-2 bg-green-500"></div>
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-900">April exceeded targets by 12.12%</p>
+                                        <p class="text-xs text-gray-500 mt-1">2 min ago</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-4 border-b border-gray-100 hover:bg-gray-50">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 rounded-full mt-2 bg-yellow-500"></div>
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-900">KIMIRONKO below target by 91.0%</p>
+                                        <p class="text-xs text-gray-500 mt-1">5 min ago</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-4 hover:bg-gray-50">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 rounded-full mt-2 bg-blue-500"></div>
+                                    <div class="flex-1">
+                                        <p class="text-sm text-gray-900">New data imported successfully</p>
+                                        <p class="text-xs text-gray-500 mt-1">1 hour ago</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <button class="px-4 py-2 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all duration-200 flex items-center space-x-2">
@@ -179,11 +225,11 @@
     </div>
 
     <!-- Main Content -->
-    <main class="main-content ml-72 mt-20 p-8">
+    <main id="main-content" class="main-content ml-72 mt-20 p-8 transition-all duration-300">
         <div class="mb-8">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Overview Dashboard</h1>
+                    <h1 id="page-title" class="text-3xl font-bold text-gray-900">Overview Dashboard</h1>
                     <p class="text-gray-600 mt-1">
                         Comprehensive performance analytics for January - April 2025
                     </p>
@@ -204,7 +250,7 @@
                         <i data-lucide="filter" class="w-5 h-5 text-gray-400"></i>
                         <h3 class="font-semibold text-gray-900">Filters</h3>
                     </div>
-                    <button class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                    <button id="clear-filters" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
                         Clear All
                     </button>
                 </div>
@@ -212,7 +258,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="space-y-2">
                         <label class="text-sm font-medium text-gray-700">Time Period</label>
-                        <select class="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm font-medium appearance-none cursor-pointer">
+                        <select id="month-filter" class="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm font-medium appearance-none cursor-pointer">
                             <option value="all">All Months</option>
                             <option value="january">January 2025</option>
                             <option value="february">February 2025</option>
@@ -223,23 +269,27 @@
 
                     <div class="space-y-2">
                         <label class="text-sm font-medium text-gray-700">Sector</label>
-                        <select class="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm font-medium appearance-none cursor-pointer">
+                        <select id="sector-filter" class="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm font-medium appearance-none cursor-pointer">
                             <option value="all">All Sectors</option>
                             <option value="KANOMBE">KANOMBE</option>
                             <option value="RUSORORO">RUSORORO</option>
                             <option value="BUSANZA">BUSANZA</option>
                             <option value="NDERA">NDERA</option>
                             <option value="RWEZAMENYO">RWEZAMENYO</option>
+                            <option value="MUHANGA">MUHANGA</option>
+                            <option value="RWAMAGANA">RWAMAGANA</option>
+                            <option value="NYAGATARE">NYAGATARE</option>
+                            <option value="JALI & GATSATA">JALI & GATSATA</option>
                         </select>
                     </div>
 
                     <div class="space-y-2">
                         <label class="text-sm font-medium text-gray-700">Quick Actions</label>
                         <div class="flex space-x-2">
-                            <button class="flex-1 px-3 py-2 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-200">
+                            <button id="top-performers" class="flex-1 px-3 py-2 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-200">
                                 Top Performers
                             </button>
-                            <button class="flex-1 px-3 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-200">
+                            <button id="underperformers" class="flex-1 px-3 py-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg text-sm font-medium hover:shadow-lg transition-all duration-200">
                                 Underperformers
                             </button>
                         </div>
@@ -248,225 +298,273 @@
             </div>
         </div>
 
-        <!-- Metric Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Total Revenue Card -->
-            <div class="metric-card visible relative overflow-hidden bg-white rounded-2xl shadow-xl card-hover group border border-gray-100">
-                <div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
-                <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                
-                <div class="relative p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="p-4 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
-                            <i data-lucide="dollar-sign" class="w-8 h-8 text-white"></i>
+        <!-- Content Sections -->
+        <div id="content-sections">
+            <!-- Overview Section -->
+            <section id="overview-section" class="space-y-8">
+                <!-- Metric Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Total Revenue Card -->
+                    <div class="metric-card relative overflow-hidden bg-white rounded-2xl shadow-xl card-hover group border border-gray-100">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
+                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                        
+                        <div class="relative p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="p-4 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                                    <i data-lucide="dollar-sign" class="w-8 h-8 text-white"></i>
+                                </div>
+                                <div class="flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                    <i data-lucide="trending-up" class="w-3 h-3"></i>
+                                    <span>15.2%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Total Revenue</p>
+                                <p class="text-3xl font-bold text-gray-900 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
+                                    54.9M
+                                </p>
+                                <p class="text-sm text-gray-500">RWF (Jan-Apr 2025)</p>
+                            </div>
+                            
+                            <div class="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full progress-bar" style="width: 65.2%"></div>
+                            </div>
                         </div>
-                        <div class="flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                            <i data-lucide="trending-up" class="w-3 h-3"></i>
-                            <span>15.2%</span>
-                        </div>
                     </div>
-                    
-                    <div class="space-y-1">
-                        <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Total Revenue</p>
-                        <p class="text-3xl font-bold text-gray-900 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
-                            54.9M
-                        </p>
-                        <p class="text-sm text-gray-500">RWF (Jan-Apr 2025)</p>
-                    </div>
-                    
-                    <div class="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-1000 ease-out" style="width: 65.2%"></div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Achievement Rate Card -->
-            <div class="metric-card visible relative overflow-hidden bg-white rounded-2xl shadow-xl card-hover group border border-gray-100">
-                <div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
-                <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                
-                <div class="relative p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="p-4 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
-                            <i data-lucide="target" class="w-8 h-8 text-white"></i>
+                    <!-- Achievement Rate Card -->
+                    <div class="metric-card relative overflow-hidden bg-white rounded-2xl shadow-xl card-hover group border border-gray-100">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
+                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                        
+                        <div class="relative p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="p-4 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                                    <i data-lucide="target" class="w-8 h-8 text-white"></i>
+                                </div>
+                                <div class="flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                    <i data-lucide="trending-up" class="w-3 h-3"></i>
+                                    <span>8.5%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Achievement Rate</p>
+                                <p class="text-3xl font-bold text-gray-900 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
+                                    78.2%
+                                </p>
+                                <p class="text-sm text-gray-500">Target Performance</p>
+                            </div>
+                            
+                            <div class="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full progress-bar" style="width: 78.2%"></div>
+                            </div>
                         </div>
-                        <div class="flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                            <i data-lucide="trending-up" class="w-3 h-3"></i>
-                            <span>8.5%</span>
-                        </div>
                     </div>
-                    
-                    <div class="space-y-1">
-                        <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Achievement Rate</p>
-                        <p class="text-3xl font-bold text-gray-900 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
-                            78.2%
-                        </p>
-                        <p class="text-sm text-gray-500">Target Performance</p>
-                    </div>
-                    
-                    <div class="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-1000 ease-out" style="width: 78.2%"></div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Active Sectors Card -->
-            <div class="metric-card visible relative overflow-hidden bg-white rounded-2xl shadow-xl card-hover group border border-gray-100">
-                <div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
-                <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                
-                <div class="relative p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="p-4 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
-                            <i data-lucide="users" class="w-8 h-8 text-white"></i>
+                    <!-- Active Sectors Card -->
+                    <div class="metric-card relative overflow-hidden bg-white rounded-2xl shadow-xl card-hover group border border-gray-100">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
+                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                        
+                        <div class="relative p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="p-4 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                                    <i data-lucide="users" class="w-8 h-8 text-white"></i>
+                                </div>
+                                <div class="flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                    <i data-lucide="trending-up" class="w-3 h-3"></i>
+                                    <span>12.3%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Active Sectors</p>
+                                <p class="text-3xl font-bold text-gray-900 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
+                                    17
+                                </p>
+                                <p class="text-sm text-gray-500">Operational Units</p>
+                            </div>
+                            
+                            <div class="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full progress-bar" style="width: 85%"></div>
+                            </div>
                         </div>
-                        <div class="flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                            <i data-lucide="trending-up" class="w-3 h-3"></i>
-                            <span>12.3%</span>
-                        </div>
                     </div>
-                    
-                    <div class="space-y-1">
-                        <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Active Sectors</p>
-                        <p class="text-3xl font-bold text-gray-900 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
-                            17
-                        </p>
-                        <p class="text-sm text-gray-500">Operational Units</p>
-                    </div>
-                    
-                    <div class="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-1000 ease-out" style="width: 85%"></div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Total Profit Card -->
-            <div class="metric-card visible relative overflow-hidden bg-white rounded-2xl shadow-xl card-hover group border border-gray-100">
-                <div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
-                <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                
-                <div class="relative p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="p-4 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
-                            <i data-lucide="trending-up" class="w-8 h-8 text-white"></i>
+                    <!-- Total Profit Card -->
+                    <div class="metric-card relative overflow-hidden bg-white rounded-2xl shadow-xl card-hover group border border-gray-100">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
+                        <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                        
+                        <div class="relative p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="p-4 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                                    <i data-lucide="trending-up" class="w-8 h-8 text-white"></i>
+                                </div>
+                                <div class="flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                    <i data-lucide="trending-up" class="w-3 h-3"></i>
+                                    <span>18.7%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-1">
+                                <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Total Profit</p>
+                                <p class="text-3xl font-bold text-gray-900 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
+                                    16.5M
+                                </p>
+                                <p class="text-sm text-gray-500">30% Margin</p>
+                            </div>
+                            
+                            <div class="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full progress-bar" style="width: 72.5%"></div>
+                            </div>
                         </div>
-                        <div class="flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                            <i data-lucide="trending-up" class="w-3 h-3"></i>
-                            <span>18.7%</span>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-1">
-                        <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Total Profit</p>
-                        <p class="text-3xl font-bold text-gray-900 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:bg-clip-text group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
-                            16.5M
-                        </p>
-                        <p class="text-sm text-gray-500">30% Margin</p>
-                    </div>
-                    
-                    <div class="mt-4 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-1000 ease-out" style="width: 72.5%"></div>
                     </div>
                 </div>
-            </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Revenue Trend Chart -->
+                    <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">Revenue Trend</h3>
+                                <p class="text-sm text-gray-500">Monthly performance vs targets</p>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                                <span class="text-xs text-gray-500">Live Data</span>
+                            </div>
+                        </div>
+                        
+                        <div class="h-80">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Top Sectors Chart -->
+                    <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900">Top Sectors</h3>
+                                <p class="text-sm text-gray-500">Performance breakdown</p>
+                            </div>
+                        </div>
+                        
+                        <div class="h-80">
+                            <canvas id="sectorsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sector Performance Matrix -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Sector Performance Matrix</h3>
+                            <p class="text-sm text-gray-500">Achievement vs target analysis</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="sector-performance-grid">
+                        <!-- Sector cards will be dynamically inserted here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Trends Section (Hidden by default) -->
+            <section id="trends-section" class="space-y-8 hidden">
+                <!-- Daily Revenue Trend Chart -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Daily Revenue Trend</h3>
+                            <p class="text-sm text-gray-500" id="trend-period-label">Jan-Apr 2025</p>
+                        </div>
+                    </div>
+                    
+                    <div class="h-96">
+                        <canvas id="dailyTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Cumulative Growth Chart -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Cumulative Growth</h3>
+                            <p class="text-sm text-gray-500">Revenue accumulation over time</p>
+                        </div>
+                    </div>
+                    
+                    <div class="h-80">
+                        <canvas id="cumulativeChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sectors Section (Hidden by default) -->
+            <section id="sectors-section" class="space-y-8 hidden">
+                <!-- Sector Filter Alert -->
+                <div id="sector-filter-alert" class="bg-blue-50 border border-blue-200 rounded-2xl p-4 hidden">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="filter" class="w-5 h-5 text-blue-600"></i>
+                            <span class="text-blue-800 font-medium">
+                                Showing results for: <span id="selected-sector-name" class="font-bold"></span>
+                            </span>
+                        </div>
+                        <button id="clear-sector-filter" class="text-blue-600 hover:text-blue-800 underline text-sm">
+                            Clear filter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sector Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Sector Contributions Chart -->
+                    <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6">Sector Contributions</h3>
+                        <div class="h-96">
+                            <canvas id="sectorContributionsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Achievement vs Target Chart -->
+                    <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                        <h3 class="text-xl font-bold text-gray-900 mb-6">Achievement vs Target</h3>
+                        <div class="h-96">
+                            <canvas id="achievementChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Performance Table -->
+                <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">Detailed Performance Table</h3>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sector</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Achievement</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="sector-performance-table">
+                                <!-- Table rows will be dynamically inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </div>
-
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- Revenue Trend Chart -->
-            <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-900">Revenue Trend</h3>
-                        <p class="text-sm text-gray-500">Monthly performance vs targets</p>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                        <span class="text-xs text-gray-500">Live Data</span>
-                    </div>
-                </div>
-                
-                <div class="h-80">
-                    <canvas id="revenueChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Top Sectors Chart -->
-            <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-900">Top Sectors</h3>
-                        <p class="text-sm text-gray-500">Performance breakdown</p>
-                    </div>
-                </div>
-                
-                <div class="h-80">
-                    <canvas id="sectorsChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sector Performance Matrix -->
-        <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-200 card-hover mb-8">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h3 class="text-xl font-bold text-gray-900">Sector Performance Matrix</h3>
-                    <p class="text-sm text-gray-500">Achievement vs target analysis</p>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Sector Cards -->
-                <div class="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl hover:shadow-lg transition-all duration-200">
-                    <div class="flex items-center justify-between mb-2">
-                        <h4 class="font-semibold text-gray-900 text-sm truncate">KANOMBE</h4>
-                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                    </div>
-                    <p class="text-lg font-bold text-gray-900">28.3M</p>
-                    <p class="text-sm text-gray-500">141.5% of target</p>
-                    <div class="mt-2 h-1 bg-gray-300 rounded-full overflow-hidden">
-                        <div class="h-full bg-green-500 rounded-full" style="width: 100%"></div>
-                    </div>
-                </div>
-                
-                <div class="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl hover:shadow-lg transition-all duration-200">
-                    <div class="flex items-center justify-between mb-2">
-                        <h4 class="font-semibold text-gray-900 text-sm truncate">RUSORORO</h4>
-                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                    </div>
-                    <p class="text-lg font-bold text-gray-900">16.1M</p>
-                    <p class="text-sm text-gray-500">107.3% of target</p>
-                    <div class="mt-2 h-1 bg-gray-300 rounded-full overflow-hidden">
-                        <div class="h-full bg-green-500 rounded-full" style="width: 100%"></div>
-                    </div>
-                </div>
-                
-                <div class="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl hover:shadow-lg transition-all duration-200">
-                    <div class="flex items-center justify-between mb-2">
-                        <h4 class="font-semibold text-gray-900 text-sm truncate">BUSANZA</h4>
-                        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                    </div>
-                    <p class="text-lg font-bold text-gray-900">12.0M</p>
-                    <p class="text-sm text-gray-500">92.2% of target</p>
-                    <div class="mt-2 h-1 bg-gray-300 rounded-full overflow-hidden">
-                        <div class="h-full bg-yellow-500 rounded-full" style="width: 92.2%"></div>
-                    </div>
-                </div>
-                
-                <div class="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl hover:shadow-lg transition-all duration-200">
-                    <div class="flex items-center justify-between mb-2">
-                        <h4 class="font-semibold text-gray-900 text-sm truncate">NDERA</h4>
-                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                    </div>
-                    <p class="text-lg font-bold text-gray-900">9.5M</p>
-                    <p class="text-sm text-gray-500">79.2% of target</p>
-                    <div class="mt-2 h-1 bg-gray-300 rounded-full overflow-hidden">
-                        <div class="h-full bg-red-500 rounded-full" style="width: 79.2%"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        
         <!-- Footer -->
         <div class="mt-16 text-center text-gray-500 text-sm">
             <p>AGRUNI Analytics Dashboard • Real-time data updated through April 2025</p>
@@ -482,97 +580,485 @@
         // Initialize Lucide icons
         lucide.createIcons();
         
-        // Set current time
-        document.getElementById('currentTime').textContent = new Date().toLocaleTimeString();
-        
-        // Revenue Chart
-        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-        const revenueChart = new Chart(revenueCtx, {
-            type: 'bar',
-            data: {
-                labels: ['January', 'February', 'March', 'April'],
-                datasets: [
-                    {
-                        label: 'Revenue',
-                        data: [10930658, 11082136, 11372096, 21584090],
-                        backgroundColor: '#6366f1',
-                        borderRadius: 4,
-                    },
-                    {
-                        label: 'Target',
-                        data: [16650000, 16650000, 16650000, 19250000],
-                        backgroundColor: '#e5e7eb',
-                        borderRadius: 4,
-                    }
-                ]
+        // Data
+        const monthlyData = [
+            {
+                month: 'January',
+                revenue: 10930658,
+                profit: 3279197,
+                target: 16650000,
+                achievement: 65.65,
+                days: 31
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': ' + (context.raw / 1000000).toFixed(1) + 'M RWF';
-                            }
+            {
+                month: 'February', 
+                revenue: 11082136,
+                profit: 3324641,
+                target: 16650000,
+                achievement: 66.56,
+                days: 28
+            },
+            {
+                month: 'March',
+                revenue: 11372096,
+                profit: 3411629,
+                target: 16650000,
+                achievement: 68.30,
+                days: 31
+            },
+            {
+                month: 'April',
+                revenue: 21584090,
+                profit: 6475227,
+                target: 19250000,
+                achievement: 112.12,
+                days: 30
+            }
+        ];
+
+        const sectorData = [
+            { name: 'KANOMBE', jan: 1916900, feb: 2410000, mar: 2410000, apr: 21584090, target: 20000000 },
+            { name: 'RUSORORO', jan: 0, feb: 1547210, mar: 1547210, apr: 13020000, target: 15000000 },
+            { name: 'BUSANZA', jan: 918400, feb: 931200, mar: 931200, apr: 9220900, target: 10000000 },
+            { name: 'NDERA', jan: 750900, feb: 1009077, mar: 1009077, apr: 6870000, target: 12000000 },
+            { name: 'RWEZAMENYO', jan: 826300, feb: 1044870, mar: 1044870, apr: 9845000, target: 10000000 },
+            { name: 'MUHANGA', jan: 0, feb: 325700, mar: 325700, apr: 6225600, target: 8000000 },
+            { name: 'RWAMAGANA', jan: 0, feb: 209260, mar: 209260, apr: 5835770, target: 8000000 },
+            { name: 'NYAGATARE', jan: 0, feb: 346710, mar: 346710, apr: 5509500, target: 8000000 },
+            { name: 'JALI & GATSATA', jan: 415700, feb: 776665, mar: 776665, apr: 4714250, target: 6000000 },
+            { name: 'NYANZA COLLECTE', jan: 0, feb: 0, mar: 0, apr: 3284400, target: 3000000 },
+            { name: 'KIMIRONKO', jan: 295500, feb: 309500, mar: 309500, apr: 3140000, target: 35000000 },
+            { name: 'MUYUMBU', jan: 0, feb: 317870, mar: 317870, apr: 2405500, target: 2000000 },
+            { name: 'NDERA/CYARUZINGE', jan: 0, feb: 0, mar: 0, apr: 2312800, target: 10000000 },
+            { name: 'RULINDO VICKY', jan: 0, feb: 0, mar: 0, apr: 1795100, target: 1500000 },
+            { name: 'KANYINYA', jan: 0, feb: 222475, mar: 222475, apr: 1377600, target: 2000000 },
+            { name: 'NYARUGUNGA', jan: 115000, feb: 0, mar: 0, apr: 1010000, target: 23000000 },
+            { name: 'TOILETTE', jan: 0, feb: 0, mar: 0, apr: 1067650, target: 1100000 }
+        ];
+
+        // Generate daily trends data
+        const generateDailyTrends = () => {
+            const data = [];
+            for (let i = 1; i <= 120; i++) {
+                const month = i <= 31 ? 'Jan' : i <= 59 ? 'Feb' : i <= 90 ? 'Mar' : 'Apr';
+                const day = i <= 31 ? i : i <= 59 ? i - 31 : i <= 90 ? i - 59 : i - 90;
+                data.push({
+                    day: `${month} ${day}`,
+                    revenue: Math.random() * 2000000 + 200000,
+                    profit: (Math.random() * 2000000 + 200000) * 0.3,
+                    cumulative: i * 350000 + Math.random() * 100000
+                });
+            }
+            return data;
+        };
+
+        const dailyTrends = generateDailyTrends();
+        
+        // State
+        let state = {
+            selectedView: 'overview',
+            selectedMonth: 'all',
+            selectedSector: 'all',
+            isLoading: false,
+            searchTerm: '',
+            sidebarCollapsed: false,
+            showNotifications: false
+        };
+
+        // DOM Elements
+        const sidebar = document.getElementById('sidebar');
+        const topbar = document.getElementById('topbar');
+        const mainContent = document.getElementById('main-content');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const notificationsBtn = document.getElementById('notifications-btn');
+        const notificationsPanel = document.getElementById('notifications-panel');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const searchInput = document.getElementById('search-input');
+        const monthFilter = document.getElementById('month-filter');
+        const sectorFilter = document.getElementById('sector-filter');
+        const clearFiltersBtn = document.getElementById('clear-filters');
+        const viewButtons = document.querySelectorAll('.view-btn');
+        const pageTitle = document.getElementById('page-title');
+        const overviewSection = document.getElementById('overview-section');
+        const trendsSection = document.getElementById('trends-section');
+        const sectorsSection = document.getElementById('sectors-section');
+        const sectorFilterAlert = document.getElementById('sector-filter-alert');
+        const selectedSectorName = document.getElementById('selected-sector-name');
+        const clearSectorFilter = document.getElementById('clear-sector-filter');
+        const topPerformersBtn = document.getElementById('top-performers');
+        const underperformersBtn = document.getElementById('underperformers');
+
+        // Initialize the dashboard
+        function initDashboard() {
+            // Set current time
+            document.getElementById('currentTime').textContent = new Date().toLocaleTimeString();
+            
+            // Initialize charts
+            initCharts();
+            
+            // Render initial data
+            renderSectorPerformanceGrid();
+            renderSectorPerformanceTable();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Animate metric cards
+            animateMetricCards();
+        }
+
+        // Initialize charts
+        function initCharts() {
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            new Chart(revenueCtx, {
+                type: 'bar',
+                data: {
+                    labels: monthlyData.map(m => m.month),
+                    datasets: [
+                        {
+                            label: 'Revenue',
+                            data: monthlyData.map(m => m.revenue),
+                            backgroundColor: '#6366f1',
+                            borderRadius: 4,
+                        },
+                        {
+                            label: 'Target',
+                            data: monthlyData.map(m => m.target),
+                            backgroundColor: '#e5e7eb',
+                            borderRadius: 4,
                         }
-                    }
+                    ]
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return (value / 1000000).toFixed(0) + 'M';
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + (context.raw / 1000000).toFixed(1) + 'M RWF';
+                                }
                             }
                         }
-                    }
-                }
-            }
-        });
-        
-        // Sectors Chart
-        const sectorsCtx = document.getElementById('sectorsChart').getContext('2d');
-        const sectorsChart = new Chart(sectorsCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['KANOMBE', 'RUSORORO', 'BUSANZA', 'NDERA', 'RWEZAMENYO', 'OTHERS'],
-                datasets: [{
-                    data: [28300000, 16100000, 12000000, 9500000, 8500000, 15000000],
-                    backgroundColor: [
-                        '#6366f1',
-                        '#8b5cf6',
-                        '#06b6d4',
-                        '#10b981',
-                        '#f59e0b',
-                        '#ef4444'
-                    ],
-                    borderWidth: 0,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.label + ': ' + (context.raw / 1000000).toFixed(1) + 'M RWF';
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(0) + 'M';
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
-        
-        // Animate metric cards on scroll
-        document.addEventListener('DOMContentLoaded', function() {
+            });
+            
+            // Sectors Chart
+            const sectorsCtx = document.getElementById('sectorsChart').getContext('2d');
+            new Chart(sectorsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: sectorData.slice(0, 6).map(s => s.name),
+                    datasets: [{
+                        data: sectorData.slice(0, 6).map(s => s.jan + s.feb + s.mar + s.apr),
+                        backgroundColor: [
+                            '#6366f1',
+                            '#8b5cf6',
+                            '#06b6d4',
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444'
+                        ],
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + (context.raw / 1000000).toFixed(1) + 'M RWF';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Daily Trend Chart
+            const dailyTrendCtx = document.getElementById('dailyTrendChart').getContext('2d');
+            new Chart(dailyTrendCtx, {
+                type: 'line',
+                data: {
+                    labels: dailyTrends.map(d => d.day),
+                    datasets: [
+                        {
+                            label: 'Daily Revenue',
+                            data: dailyTrends.map(d => d.revenue),
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Daily Profit',
+                            data: dailyTrends.map(d => d.profit),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + (context.raw / 1000).toFixed(0) + 'K RWF';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxTicksLimit: 10
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Cumulative Chart
+            const cumulativeCtx = document.getElementById('cumulativeChart').getContext('2d');
+            new Chart(cumulativeCtx, {
+                type: 'line',
+                data: {
+                    labels: dailyTrends.map(d => d.day),
+                    datasets: [{
+                        label: 'Cumulative Revenue',
+                        data: dailyTrends.map(d => d.cumulative),
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + (context.raw / 1000000).toFixed(1) + 'M RWF';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxTicksLimit: 10
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(0) + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Sector Contributions Chart
+            const sectorContributionsCtx = document.getElementById('sectorContributionsChart').getContext('2d');
+            new Chart(sectorContributionsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: sectorData.slice(0, 8).map(s => s.name),
+                    datasets: [{
+                        data: sectorData.slice(0, 8).map(s => s.jan + s.feb + s.mar + s.apr),
+                        backgroundColor: [
+                            '#6366f1',
+                            '#8b5cf6',
+                            '#06b6d4',
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444',
+                            '#ec4899',
+                            '#6b7280'
+                        ],
+                        borderWidth: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + (context.raw / 1000000).toFixed(1) + 'M RWF';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Achievement Chart
+            const achievementCtx = document.getElementById('achievementChart').getContext('2d');
+            const sectorAchievements = sectorData.map(s => {
+                const total = s.jan + s.feb + s.mar + s.apr;
+                return (total / s.target) * 100;
+            });
+            
+            new Chart(achievementCtx, {
+                type: 'bar',
+                data: {
+                    labels: sectorData.map(s => s.name),
+                    datasets: [{
+                        label: 'Achievement %',
+                        data: sectorAchievements,
+                        backgroundColor: sectorAchievements.map(a => a >= 100 ? '#10b981' : '#ef4444'),
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Achievement: ' + context.raw.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Render sector performance grid
+        function renderSectorPerformanceGrid() {
+            const gridContainer = document.getElementById('sector-performance-grid');
+            gridContainer.innerHTML = '';
+            
+            const sectorsToShow = state.selectedSector === 'all' 
+                ? sectorData.slice(0, 12) 
+                : sectorData.filter(s => s.name === state.selectedSector);
+            
+            sectorsToShow.forEach(sector => {
+                const total = sector.jan + sector.feb + sector.mar + sector.apr;
+                const achievement = (total / sector.target) * 100;
+                
+                const sectorCard = document.createElement('div');
+                sectorCard.className = 'p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl hover:shadow-lg transition-all duration-200';
+                sectorCard.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-semibold text-gray-900 text-sm truncate">${sector.name}</h4>
+                        <div class="w-3 h-3 rounded-full ${achievement >= 100 ? 'bg-green-500' : achievement >= 75 ? 'bg-yellow-500' : 'bg-red-500'}"></div>
+                    </div>
+                    <p class="text-lg font-bold text-gray-900">${(total / 1000000).toFixed(1)}M</p>
+                    <p class="text-sm text-gray-500">${achievement.toFixed(1)}% of target</p>
+                    <div class="mt-2 h-1 bg-gray-300 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full ${achievement >= 100 ? 'bg-green-500' : achievement >= 75 ? 'bg-yellow-500' : 'bg-red-500'}" style="width: ${Math.min(achievement, 100)}%"></div>
+                    </div>
+                `;
+                
+                gridContainer.appendChild(sectorCard);
+            });
+        }
+
+        // Render sector performance table
+        function renderSectorPerformanceTable() {
+            const tableBody = document.getElementById('sector-performance-table');
+            tableBody.innerHTML = '';
+            
+            const sectorsToShow = state.selectedSector === 'all' 
+                ? sectorData 
+                : sectorData.filter(s => s.name === state.selectedSector);
+            
+            sectorsToShow.forEach(sector => {
+                const total = sector.jan + sector.feb + sector.mar + sector.apr;
+                const achievement = (total / sector.target) * 100;
+                
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${sector.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${(total / 1000000).toFixed(1)}M RWF</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${(sector.target / 1000000).toFixed(1)}M RWF</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${achievement.toFixed(1)}%</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        ${achievement >= 100 ? 
+                            '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i>Exceeded</span>' : 
+                            '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><i data-lucide="trending-down" class="w-3 h-3 mr-1"></i>Below Target</span>'
+                        }
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Refresh icons in the new content
+            lucide.createIcons();
+        }
+
+        // Animate metric cards
+        function animateMetricCards() {
             const metricCards = document.querySelectorAll('.metric-card');
             
             metricCards.forEach((card, index) => {
@@ -580,7 +1066,272 @@
                     card.classList.add('visible');
                 }, 100 * (index + 1));
             });
-        });
+            
+            // Animate progress bars
+            const progressBars = document.querySelectorAll('.progress-bar');
+            progressBars.forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0';
+                setTimeout(() => {
+                    bar.style.width = width;
+                }, 500);
+            });
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Sidebar toggle
+            sidebarToggle.addEventListener('click', () => {
+                state.sidebarCollapsed = !state.sidebarCollapsed;
+                
+                if (state.sidebarCollapsed) {
+                    sidebar.classList.remove('w-72');
+                    sidebar.classList.add('w-16');
+                    topbar.classList.remove('left-72');
+                    topbar.classList.add('left-16');
+                    mainContent.classList.remove('ml-72');
+                    mainContent.classList.add('ml-16');
+                    sidebarToggle.querySelector('i').classList.remove('-rotate-90');
+                    sidebarToggle.querySelector('i').classList.add('rotate-90');
+                } else {
+                    sidebar.classList.remove('w-16');
+                    sidebar.classList.add('w-72');
+                    topbar.classList.remove('left-16');
+                    topbar.classList.add('left-72');
+                    mainContent.classList.remove('ml-16');
+                    mainContent.classList.add('ml-72');
+                    sidebarToggle.querySelector('i').classList.remove('rotate-90');
+                    sidebarToggle.querySelector('i').classList.add('-rotate-90');
+                }
+            });
+            
+            // Notifications toggle
+            notificationsBtn.addEventListener('click', () => {
+                state.showNotifications = !state.showNotifications;
+                notificationsPanel.classList.toggle('hidden');
+            });
+            
+            // Close notifications when clicking outside
+            document.addEventListener('click', (e) => {
+                if (state.showNotifications && !notificationsBtn.contains(e.target) && !notificationsPanel.contains(e.target)) {
+                    state.showNotifications = false;
+                    notificationsPanel.classList.add('hidden');
+                }
+            });
+            
+            // Refresh button
+            refreshBtn.addEventListener('click', () => {
+                state.isLoading = true;
+                refreshBtn.querySelector('i').classList.add('animate-spin');
+                
+                setTimeout(() => {
+                    state.isLoading = false;
+                    refreshBtn.querySelector('i').classList.remove('animate-spin');
+                    
+                    // Update last updated time
+                    document.getElementById('currentTime').textContent = new Date().toLocaleTimeString();
+                }, 1500);
+            });
+            
+            // Search input
+            searchInput.addEventListener('input', (e) => {
+                state.searchTerm = e.target.value;
+                applyFilters();
+            });
+            
+            // Month filter
+            monthFilter.addEventListener('change', (e) => {
+                state.selectedMonth = e.target.value;
+                applyFilters();
+            });
+            
+            // Sector filter
+            sectorFilter.addEventListener('change', (e) => {
+                state.selectedSector = e.target.value;
+                applyFilters();
+                
+                // Show/hide sector filter alert
+                if (state.selectedSector !== 'all') {
+                    sectorFilterAlert.classList.remove('hidden');
+                    selectedSectorName.textContent = state.selectedSector;
+                } else {
+                    sectorFilterAlert.classList.add('hidden');
+                }
+            });
+            
+            // Clear filters
+            clearFiltersBtn.addEventListener('click', () => {
+                state.selectedMonth = 'all';
+                state.selectedSector = 'all';
+                state.searchTerm = '';
+                
+                monthFilter.value = 'all';
+                sectorFilter.value = 'all';
+                searchInput.value = '';
+                
+                sectorFilterAlert.classList.add('hidden');
+                
+                applyFilters();
+            });
+            
+            // Clear sector filter
+            clearSectorFilter.addEventListener('click', () => {
+                state.selectedSector = 'all';
+                sectorFilter.value = 'all';
+                sectorFilterAlert.classList.add('hidden');
+                applyFilters();
+            });
+            
+            // View buttons
+            viewButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const view = btn.getAttribute('data-view');
+                    changeView(view);
+                });
+            });
+            
+            // Top performers button
+            topPerformersBtn.addEventListener('click', () => {
+                state.selectedSector = 'all';
+                sectorFilter.value = 'all';
+                state.searchTerm = '';
+                searchInput.value = '';
+                
+                // Filter to show only top performers (achievement >= 100%)
+                const topPerformers = sectorData.filter(s => {
+                    const total = s.jan + s.feb + s.mar + s.apr;
+                    return (total / s.target) * 100 >= 100;
+                }).map(s => s.name);
+                
+                state.selectedSector = topPerformers[0] || 'all';
+                if (topPerformers.length > 0) {
+                    sectorFilter.value = state.selectedSector;
+                    sectorFilterAlert.classList.remove('hidden');
+                    selectedSectorName.textContent = state.selectedSector;
+                }
+                
+                applyFilters();
+            });
+            
+            // Underperformers button
+            underperformersBtn.addEventListener('click', () => {
+                state.selectedSector = 'all';
+                sectorFilter.value = 'all';
+                state.searchTerm = '';
+                searchInput.value = '';
+                
+                // Filter to show only underperformers (achievement < 75%)
+                const underperformers = sectorData.filter(s => {
+                    const total = s.jan + s.feb + s.mar + s.apr;
+                    return (total / s.target) * 100 < 75;
+                }).map(s => s.name);
+                
+                state.selectedSector = underperformers[0] || 'all';
+                if (underperformers.length > 0) {
+                    sectorFilter.value = state.selectedSector;
+                    sectorFilterAlert.classList.remove('hidden');
+                    selectedSectorName.textContent = state.selectedSector;
+                }
+                
+                applyFilters();
+            });
+        }
+
+        // Change view
+        function changeView(view) {
+            state.selectedView = view;
+            
+            // Update active button
+            viewButtons.forEach(btn => {
+                if (btn.getAttribute('data-view') === view) {
+                    btn.classList.add('bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white', 'shadow-lg', 'scale-105');
+                    btn.classList.remove('text-gray-600', 'hover:bg-gray-100', 'hover:text-gray-900');
+                } else {
+                    btn.classList.remove('bg-gradient-to-r', 'from-primary', 'to-secondary', 'text-white', 'shadow-lg', 'scale-105');
+                    btn.classList.add('text-gray-600', 'hover:bg-gray-100', 'hover:text-gray-900');
+                }
+            });
+            
+            // Update page title
+            if (view === 'overview') {
+                pageTitle.textContent = 'Overview Dashboard';
+                overviewSection.classList.remove('hidden');
+                trendsSection.classList.add('hidden');
+                sectorsSection.classList.add('hidden');
+            } else if (view === 'trends') {
+                pageTitle.textContent = 'Trend Analysis';
+                overviewSection.classList.add('hidden');
+                trendsSection.classList.remove('hidden');
+                sectorsSection.classList.add('hidden');
+                
+                // Update trend period label
+                const trendPeriodLabel = document.getElementById('trend-period-label');
+                if (state.selectedMonth === 'all') {
+                    trendPeriodLabel.textContent = 'Jan-Apr 2025';
+                } else {
+                    trendPeriodLabel.textContent = state.selectedMonth.charAt(0).toUpperCase() + state.selectedMonth.slice(1) + ' 2025';
+                }
+            } else if (view === 'sectors') {
+                pageTitle.textContent = 'Sector Performance';
+                overviewSection.classList.add('hidden');
+                trendsSection.classList.add('hidden');
+                sectorsSection.classList.remove('hidden');
+            }
+        }
+
+        // Apply filters
+        function applyFilters() {
+            // For this demo, we'll just update the sector performance grid and table
+            renderSectorPerformanceGrid();
+            renderSectorPerformanceTable();
+            
+            // Update metrics based on filters
+            updateMetrics();
+        }
+
+        // Update metrics based on filters
+        function updateMetrics() {
+            // Calculate filtered metrics
+            let filteredMonthly = monthlyData;
+            let filteredSectors = sectorData;
+            
+            if (state.selectedMonth !== 'all') {
+                filteredMonthly = monthlyData.filter(month => 
+                    month.month.toLowerCase() === state.selectedMonth.toLowerCase()
+                );
+            }
+            
+            if (state.selectedSector !== 'all') {
+                filteredSectors = sectorData.filter(sector => sector.name === state.selectedSector);
+            }
+            
+            if (state.searchTerm) {
+                filteredSectors = filteredSectors.filter(sector =>
+                    sector.name.toLowerCase().includes(state.searchTerm.toLowerCase())
+                );
+            }
+            
+            const filteredRevenue = filteredMonthly.reduce((sum, month) => sum + month.revenue, 0);
+            const filteredProfit = filteredMonthly.reduce((sum, month) => sum + month.profit, 0);
+            const filteredAvgAchievement = filteredMonthly.length > 0 
+                ? filteredMonthly.reduce((sum, month) => sum + month.achievement, 0) / filteredMonthly.length 
+                : 0;
+            
+            // Update metric cards
+            document.querySelectorAll('.metric-card')[0].querySelector('p.text-3xl').textContent = `${(filteredRevenue / 1000000).toFixed(1)}M`;
+            document.querySelectorAll('.metric-card')[1].querySelector('p.text-3xl').textContent = `${filteredAvgAchievement.toFixed(1)}%`;
+            document.querySelectorAll('.metric-card')[2].querySelector('p.text-3xl').textContent = filteredSectors.length;
+            document.querySelectorAll('.metric-card')[3].querySelector('p.text-3xl').textContent = `${(filteredProfit / 1000000).toFixed(1)}M`;
+            
+            // Update progress bars
+            document.querySelectorAll('.progress-bar')[0].style.width = `${(filteredRevenue / 80000000) * 100}%`;
+            document.querySelectorAll('.progress-bar')[1].style.width = `${filteredAvgAchievement}%`;
+            document.querySelectorAll('.progress-bar')[2].style.width = `${(filteredSectors.length / 17) * 100}%`;
+            document.querySelectorAll('.progress-bar')[3].style.width = `${(filteredProfit / 24000000) * 100}%`;
+        }
+
+        // Initialize the dashboard when the page loads
+        document.addEventListener('DOMContentLoaded', initDashboard);
     </script>
 </body>
 </html>
